@@ -1,4 +1,5 @@
 import { MoveDest, RoleData, Action } from "Creeps/creeps";
+import { SourceData } from "Empire/empire";
 
 export class MemoryStructure implements CreepMemory {
     version: number;
@@ -6,8 +7,9 @@ export class MemoryStructure implements CreepMemory {
     healing: boolean = false;
     disable: boolean = false;
     dest: MoveDest | null = null;
-    lastAction: string | undefined = undefined;
-    renewing: boolean | undefined = undefined;
+    lastAction: string = "none";
+    renewing: boolean = false;
+    sourceData: SourceData | null = null;
 
     constructor(roleData: RoleData) {
         this.version = MemoryManager.CurVersion;

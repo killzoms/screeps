@@ -1,8 +1,5 @@
-var creepsMovement = require("creeps.movement");
-var creepsMisc = require("creeps.misc");
-var creepsEmpire = require("empire");
-var creepsPriority = require("creeps.priority");
 import { Action, Creeps } from "./creeps";
+import { SourceData } from "Empire/empire";
 
 
 function clearHealingAction(creep: Creep) {
@@ -25,10 +22,10 @@ function shouldRenew(creep: Creep) {
 }
 
 function movementAction(creep: Creep) {
-    creepsMovement.processMovement(creep);
+    Creeps.Movement.processMovement(creep);
 }
 
-var movement = new Action("move", 1, creepsMovement.shouldMove, false, movementAction);
+var movement = new Action("move", 1, Creeps.Movement.shouldMove, false, movementAction);
 
 var renew = new Action("renew", 11, shouldRenew, true, function (creep) {
     var closestSpawn = findClosestSpawn(creep);
@@ -48,7 +45,7 @@ var renew = new Action("renew", 11, shouldRenew, true, function (creep) {
     if (creep.memory.renewing) {
         var renewResult = closestSpawn.renewCreep(creep)
         if (renewResult == ERR_NOT_IN_RANGE || renewResult == ERR_BUSY) {
-            creepsMovement.assignDest(creep, closestSpawn, 1)
+            Creeps.Movement.assignDest(creep, closestSpawn, 1)
         }
     }
 });
@@ -77,18 +74,18 @@ function scout(creep: Creep) {/*
     }*/
 }
 
-var scoutAction = new Action("scout", 0, function (creep) { return false; return !creep.memory.scoutData || (creep.memory.scoutData && creep.memory.scoutData.assignedRoom != creep.room.name) }, true, scout);
+var scoutAction = new Action("scout", 0, function (creep) { return false;/* return !creep.memory.scoutData || (creep.memory.scoutData && creep.memory.scoutData.assignedRoom != creep.room.name)*/ }, true, scout);
 
 function harvest(creep: Creep) {
-    var idealSource;
-    if (creep.memory.sourceData && creep.memory.sourceData.roomName && creep.memory.sourceData.index) {
-        if (typeof Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData == "undefined") {
+    var idealSource: Source | undefined;
+    if (creep.memory.sourceData && creep.memory.sourceData.roomName && creep.memory.sourceData.Index) {
+        if (Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData == null) {
             Empire.sourceController.findSources();
         }
-        var roomSource = Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData[creep.memory.sourceData.index];
+        var roomSource = Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData[creep.memory.sourceData.Index];
         var sourcePos = new RoomPosition(roomSource.x, roomSource.y, creep.memory.sourceData.roomName);
         if (typeof Game.rooms[creep.memory.sourceData.roomName] == "undefined") {
-            creepsMovement.assignDest(creep, sourcePos, 1)
+            Creeps.Movement.assignDest(creep, sourcePos, 1)
         }
         else {
             var lookAt = Game.rooms[creep.memory.sourceData.roomName].lookForAt(LOOK_SOURCES, roomSource.x, roomSource.y);
@@ -99,51 +96,51 @@ function harvest(creep: Creep) {
         var sources = _.sortBy(Empire.sourceController.getAvailableSources(), (sourceData) => { return creep.pos.getRangeTo(new RoomPosition(sourceData.x, sourceData.y, sourceData.roomName)) });
 
         if (sources.length > 0) {
-            var source: Source = sources[0];
+            var source: SourceData = sources[0];
             var room = Game.rooms[source.roomName];
             if (typeof room == "undefined") {
-                creepsMovement.assignDest(creep, new RoomPosition(source.x, source.y, source.roomName), 1)
+                Creeps.Movement.assignDest(creep, source, 1)
             }
             else {
                 var lookAt = room.lookForAt(LOOK_SOURCES, source.x, source.y);
                 idealSource = lookAt[0];
-                creepsEmpire.sourceController.assignSource(creep, source);
+                Empire.sourceController.assignSource(creep, source);
             }
         }
     }
 
 
-    if (typeof idealSource != "undefined") {
+    if (idealSource != undefined) {
         var result = creep.harvest(idealSource)
         if (result == ERR_NOT_IN_RANGE) {
-            creepsMovement.assignDest(creep, idealSource, 1);
+            Creeps.Movement.assignDest(creep, idealSource, 1);
         }
     }
 }
 
 var harvestAction = new Action("harvest", 0, function (creep) {
-    if (creep.memory.roleData.role != "harvester") {
-        return creepsEmpire.sourceController.getAvailableEnergy() > 0 && !getDraining(creep);
+    if (creep.memory.roleData.Role != "harvester") {
+        return Empire.sourceController.getAvailableEnergy() > 0 && !getDraining(creep);
     }
-    return creepsEmpire.sourceController.getAvailableEnergy() > 0;
+    return Empire.sourceController.getAvailableEnergy() > 0;
 }, true, harvest);
 
-function attack(creep) {
-    var enemies = creepsEmpire.enemyController.getEnemies();
+function attack(creep: Creep) {
+    var enemies = Empire.enemyController.getEnemies();
 
     if (enemies.length > 0 && creep.attack(enemies[0]) == ERR_NOT_IN_RANGE) {
-        creepsMovement.assignDest(creep, enemies[0], 1);
+        Creeps.Movement.assignDest(creep, enemies[0], 1);
     }
 }
 
 var attackAction = new Action("attack", 0, function (creep) {
-    var enemies = creepsEmpire.enemyController.getEnemies();
-    return _.filter(creep.body, (bodyPart) => { return bodyPart.type == ATTACK; }).length > 0 && enemies.length > 0 && _.filter(enemies, (enemy) => { return enemy.owner.username == "Invader"; }).length > 0;
+    var enemies = Empire.enemyController.getEnemies();
+    return _.filter(creep.body, (bodyPart) => { return bodyPart.type == ATTACK; }).length > 0 && enemies.length > 0 && _.filter(enemies, (enemy: Creep) => { return enemy.owner.username == "Invader"; }).length > 0;
 }, true, attack);
 
-function build(creep) {
+function build(creep: Creep) {
     var constructionSites = _.sortBy(creep.room.find(FIND_CONSTRUCTION_SITES), (target) => {
-        return creepsPriority.getPriority(target);
+        return Creeps.Priority.getPriority(target);
     });
     var targetSite = constructionSites[0];
 
@@ -151,23 +148,23 @@ function build(creep) {
         return targetSite.structureType == site.structureType;
     });
 
-    var target = creep.pos.findClosestByRange(filteredSites);
+    var target: ConstructionSite | null = creep.pos.findClosestByRange(filteredSites);
 
-    if (creep.build(target) == ERR_NOT_IN_RANGE) {
-        creepsMovement.assignDest(creep, target, 3);
+    if (target != null && creep.build(target) == ERR_NOT_IN_RANGE) {
+        Creeps.Movement.assignDest(creep, target, 3);
     }
 }
 
-function getDraining(creep) {
-    if (typeof creep.memory.roleData.draining == "undefined") {
-        creep.memory.roleData.draining = false;
+function getDraining(creep: Creep) {
+    if (typeof creep.memory.roleData.Draining == "undefined") {
+        creep.memory.roleData.Draining = false;
     }
 
-    if (creep.memory.roleData.draining == false && creep.store.getFreeCapacity() == 0) {
-        creep.memory.roleData.draining = true;
+    if (creep.memory.roleData.Draining == false && creep.store.getFreeCapacity() == 0) {
+        creep.memory.roleData.Draining = true;
     }
-    else if (creep.memory.roleData.draining == true && creep.store.getUsedCapacity() == 0) {
-        creep.memory.roleData.draining = false;
+    else if (creep.memory.roleData.Draining == true && creep.store.getUsedCapacity() == 0) {
+        creep.memory.roleData.Draining = false;
     }
 
     return creep.memory.roleData.draining;

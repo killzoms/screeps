@@ -2,6 +2,7 @@ import { ErrorMapper } from "utils/ErrorMapper";
 import { Creeps, RoleData, Action, MoveDest } from "Creeps/creeps";
 import { MemoryManager } from "memoryManager";
 import { Role } from "Creeps/roles";
+import { SourceData } from "Empire/empire";
 
 declare global {
   /*
@@ -21,13 +22,14 @@ declare global {
   }
 
   interface CreepMemory {
-    renewing: boolean | undefined,
+    renewing: boolean;
+    sourceData: SourceData | null;
     roleData: RoleData;
     healing: boolean;
     disable: boolean;
     dest: MoveDest | null;
     version: number;
-    lastAction: string | undefined;
+    lastAction: string;
   }
 
   interface Game {
@@ -96,8 +98,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
       var creepMem = Memory.creeps[name];
       if (creepMem.roleData && creepMem.roleData.Role == "harvester") {
         if (creepMem.sourceData) {
-          if (Memory.cachedRooms && Memory.cachedRooms[creepMem.sourceData.roomName] && Memory.cachedRooms[creepMem.sourceData.roomName].sourceData && Memory.cachedRooms[creepMem.sourceData.roomName].sourceData[creepMem.sourceData.index]) {
-            Memory.cachedRooms[creepMem.sourceData.roomName].sourceData[creepMem.sourceData.index].openPositions++;
+          if (Memory.cachedRooms && Memory.cachedRooms[creepMem.sourceData.roomName] && Memory.cachedRooms[creepMem.sourceData.roomName].sourceData && Memory.cachedRooms[creepMem.sourceData.roomName].sourceData[creepMem.sourceData.Index]) {
+            Memory.cachedRooms[creepMem.sourceData.roomName].sourceData[creepMem.sourceData.Index].openPositions++;
           }
         }
       }
