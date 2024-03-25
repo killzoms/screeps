@@ -36,7 +36,7 @@ jobs:
           # Destination branch in screeps.
           branch: main
           # Screeps API token. Can be obtained from account settings: https://screeps.com/a/#!/account/auth-tokens
-          token: ${{tokens.SCREEPS_TOKEN}}
+          token: ${{secrets.SCREEPS_TOKEN}}
           # Directory for .js files.
           dir: ./dist # optional, default is ./
           # Screeps server API URL
