@@ -27,7 +27,7 @@ jobs:
 
       - name: TypeScript Compilation
         run: |
-          npm
+          npm install
           npm run-script build
       
       - name: screeps-pusher action
