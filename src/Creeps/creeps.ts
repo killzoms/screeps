@@ -1,11 +1,15 @@
 import { ai } from "./ai";
 import { movement } from "./movement"
 import { action } from "./action";
+import { Misc } from "./misc";
+import { Roles } from "./roles";
 
-export const creeps = {
+export const Creeps = {
     Ai: ai,
     Action: action,
-    Movement: movement
+    Movement: movement,
+    Misc: Misc,
+    Roles: Roles
 }
 
 export class BodyPart {

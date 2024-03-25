@@ -1,17 +1,8 @@
-/*
- * Module code goes here. Use 'module.exports' to export things:
- * module.exports.thing = 'a thing';
- *
- * You can import it from another modules like this:
- * var mod = require('creeps.action');
- * mod.thing == 'a thing'; // true
- */
-
 var creepsMovement = require("creeps.movement");
 var creepsMisc = require("creeps.misc");
 var creepsEmpire = require("empire");
 var creepsPriority = require("creeps.priority");
-import { Action } from "creeps/creeps";
+import { Action, Creeps } from "./creeps";
 
 
 function clearHealingAction(creep: Creep) {
@@ -26,14 +17,14 @@ function findClosestSpawn(creep: Creep) {
     return sortedSpawns[0];
 }
 
-function shouldRenew(creep) {
+function shouldRenew(creep: Creep) {
     var closestSpawn = findClosestSpawn(creep);
     var regenedTicks = 600 / creep.body.length;
-    var regenCost = misc.calculateEnergyCost(creep.body) * 0.4 / creep.body.length;
-    return (creep.memory.renewing || (creep.ticksToLive < 500 && closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > regenCost))
+    var regenCost = Creeps.Misc.calculateEnergyCost(Creeps.Misc.getBody(creep)) * 0.4 / creep.body.length;
+    return (creep.memory.renewing || (Creeps.Misc.getTicksToLive(creep) < 500 && closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > regenCost))
 }
 
-function movementAction(creep) {
+function movementAction(creep: Creep) {
     creepsMovement.processMovement(creep);
 }
 
@@ -42,11 +33,11 @@ var movement = new Action("move", 1, creepsMovement.shouldMove, false, movementA
 var renew = new Action("renew", 11, shouldRenew, true, function (creep) {
     var closestSpawn = findClosestSpawn(creep);
     var regenedTicks = 600 / creep.body.length;
-    var regenCost = misc.calculateEnergyCost(creep.body) * 0.4 / creep.body.length;
+    var regenCost = Creeps.Misc.calculateEnergyCost(Creeps.Misc.getBody(creep)) * 0.4 / creep.body.length;
 
     creep.say("Renewing");
 
-    if (creep.memory.renewing && (creep.ticksToLive > 1200 || closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) < regenCost)) {
+    if (creep.memory.renewing && (Creeps.Misc.getTicksToLive(creep) > 1200 || closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) < regenCost)) {
         creep.memory.renewing = false;
         return;
     }
@@ -62,7 +53,7 @@ var renew = new Action("renew", 11, shouldRenew, true, function (creep) {
     }
 });
 
-function scout(creep) {
+function scout(creep: Creep) {/*
     if (!creep.memory.scoutData) {
         creep.memory.scoutData = {};
     }
@@ -83,16 +74,16 @@ function scout(creep) {
     }
     else {
 
-    }
+    }*/
 }
 
 var scoutAction = new Action("scout", 0, function (creep) { return false; return !creep.memory.scoutData || (creep.memory.scoutData && creep.memory.scoutData.assignedRoom != creep.room.name) }, true, scout);
 
-function harvest(creep) {
+function harvest(creep: Creep) {
     var idealSource;
     if (creep.memory.sourceData && creep.memory.sourceData.roomName && creep.memory.sourceData.index) {
         if (typeof Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData == "undefined") {
-            creepsEmpire.sourceController.findSources();
+            Empire.sourceController.findSources();
         }
         var roomSource = Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData[creep.memory.sourceData.index];
         var sourcePos = new RoomPosition(roomSource.x, roomSource.y, creep.memory.sourceData.roomName);
@@ -105,10 +96,10 @@ function harvest(creep) {
         }
     }
     else {
-        var sources = _.sortBy(creepsEmpire.sourceController.getAvailableSources(), (sourceData) => { return creep.pos.getRangeTo(new RoomPosition(sourceData.x, sourceData.y, sourceData.roomName)) });
+        var sources = _.sortBy(Empire.sourceController.getAvailableSources(), (sourceData) => { return creep.pos.getRangeTo(new RoomPosition(sourceData.x, sourceData.y, sourceData.roomName)) });
 
         if (sources.length > 0) {
-            var source = sources[0];
+            var source: Source = sources[0];
             var room = Game.rooms[source.roomName];
             if (typeof room == "undefined") {
                 creepsMovement.assignDest(creep, new RoomPosition(source.x, source.y, source.roomName), 1)
