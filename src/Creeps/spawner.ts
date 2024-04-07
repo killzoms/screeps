@@ -7,7 +7,8 @@
  * mod.thing == 'a thing'; // true
  */
 import { MemoryStructure } from "memoryManager";
-import { Creeps, BodyPart, RoleData } from "./creeps";
+import { BodyPart, RoleData, Roles } from "./roles";
+import { Misc } from "./misc";
 
 
 function buildBody(bodyPartsData: BodyPart[], spawn: StructureSpawn): BodyPartConstant[]
@@ -15,7 +16,7 @@ function buildBody(bodyPartsData: BodyPart[], spawn: StructureSpawn): BodyPartCo
     let multiplier = 0;
     let bodyParts: BodyPartConstant[] = [];
 
-    for (var bodyPart of Creeps.Roles.Base.BodyParts)
+    for (var bodyPart of Roles.Base.BodyParts)
     {
         var addedParts = 0;
         while (bodyPart.Multiplier < addedParts)
@@ -25,7 +26,7 @@ function buildBody(bodyPartsData: BodyPart[], spawn: StructureSpawn): BodyPartCo
         }
     }
 
-    var baseCost = Creeps.Misc.calculateEnergyCost(bodyParts);
+    var baseCost = Misc.calculateEnergyCost(bodyParts);
 
     var reachedLimit = false;
     while (!reachedLimit)
@@ -43,7 +44,7 @@ function buildBody(bodyPartsData: BodyPart[], spawn: StructureSpawn): BodyPartCo
             }
         }
 
-        var potentialCost = Creeps.Misc.calculateEnergyCost(potentialParts);
+        var potentialCost = Misc.calculateEnergyCost(potentialParts);
 
         reachedLimit = potentialCost + baseCost > Spawner.getSpawnerCapacity(spawn);
 
@@ -79,12 +80,12 @@ export class Spawner
             return;
         }
 
-        var harvesterCreepsLength = Creeps.Misc.getCreepsByRole("harvester").length;
-        var upgraderCreepsLength = Creeps.Misc.getCreepsByRole("upgrader").length;
-        var haulerCreepsLength = Creeps.Misc.getCreepsByRole("hauler").length;
-        var builderCreepsLength = Creeps.Misc.getCreepsByRole("builder").length;
+        var harvesterCreepsLength = Misc.getCreepsByRole("harvester").length;
+        var upgraderCreepsLength = Misc.getCreepsByRole("upgrader").length;
+        var haulerCreepsLength = Misc.getCreepsByRole("hauler").length;
+        var builderCreepsLength = Misc.getCreepsByRole("builder").length;
 
-        var priorityRoles = _.sortBy(Creeps.Roles.roles, (role) =>
+        var priorityRoles = _.sortBy(Roles.roles, (role) =>
         {
             if (!global.roles[role])
             {
@@ -103,7 +104,7 @@ export class Spawner
             if (roleData)
             {
                 var bodyParts = buildBody(roleData.BodyParts, spawn);
-                var creeps = _.sortBy(Creeps.Misc.getCreepsByRole(role), (creep) => { return creep.body.length; });
+                var creeps = _.sortBy(Misc.getCreepsByRole(role), (creep) => { return creep.body.length; });
 
                 if (roleData.Limit() > creeps.length)
                 {
@@ -133,9 +134,9 @@ export class Spawner
         if (roleData)
         {
             var bodyParts = buildBody(roleData.BodyParts, spawn);
-            var creeps = Creeps.Misc.getCreepsByRole(role);
+            var creeps = Misc.getCreepsByRole(role);
 
-            var energyCost = Creeps.Misc.calculateEnergyCost(bodyParts);
+            var energyCost = Misc.calculateEnergyCost(bodyParts);
 
             if (creeps.length < roleData.Limit())
             {

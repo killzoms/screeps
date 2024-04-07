@@ -1,6 +1,42 @@
-import { CachedRoom, Empire, EmpireSource, PositionData, SourceData } from "./empire";
-import { Creeps } from "Creeps/creeps";
+import { Misc } from "Creeps/misc";
+import { CachedRoom } from "./rooms";
 
+export class SourceData extends RoomPosition
+{
+    public Index: number;
+
+    public constructor(roomName: string, x: number, y: number, index: number)
+    {
+        super(x, y, roomName);
+        this.Index = index;
+    }
+}
+
+export class EmpireSource extends RoomPosition
+{
+    public Index: number;
+    public PositionData: PositionData;
+
+    constructor(pos: RoomPosition, sourceIndex: number, positionData: PositionData)
+    {
+        super(pos.x, pos.y, pos.roomName);
+
+        this.Index = sourceIndex;
+        this.PositionData = positionData;
+    }
+}
+
+export class PositionData
+{
+    public TotalPositions: number;
+    public OpenPositions: number;
+
+    public constructor(usedPositions: number, totalPositions: number)
+    {
+        this.TotalPositions = totalPositions;
+        this.OpenPositions = totalPositions - usedPositions;
+    }
+}
 
 function findOpenPositions(sourcePos: RoomPosition, index: number): PositionData
 {
@@ -20,7 +56,7 @@ function findOpenPositions(sourcePos: RoomPosition, index: number): PositionData
                 totalPositions++;
             }
         }
-        var harvesters = Creeps.Misc.getCreepsByRole("harvester");
+        var harvesters = Misc.getCreepsByRole("harvester");
         for (var i in harvesters)
         {
             var creep = harvesters[i];

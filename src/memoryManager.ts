@@ -1,5 +1,7 @@
-import { MoveDest, RoleData, Action, HealData, MoveData } from "Creeps/creeps";
-import { SourceData } from "Empire/empire";
+import { HealData } from "Creeps/action";
+import { MoveData } from "Creeps/movement";
+import { RoleData } from "Creeps/roles";
+import { SourceData } from "Empire/resources";
 
 export class MemoryStructure implements CreepMemory
 {

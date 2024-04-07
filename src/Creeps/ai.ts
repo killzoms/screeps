@@ -1,6 +1,6 @@
 function processActions(creep: Creep)
 {
-    var highPriActions = _.sortBy(_.filter(Game.actions, (action) => { return action.Priority > 0 }), (action) => { return -action.Priority })
+    var highPriActions = _.sortBy(_.filter(Game.actions, (action) => { return action.Priority > 0; }), (action) => { return -action.Priority; });
     var breaking = false;
 
     for (var i in highPriActions)
@@ -23,7 +23,7 @@ function processActions(creep: Creep)
     }
 }
 
-export class ai
+export class Ai
 {
     public static run(creep: Creep)
     {

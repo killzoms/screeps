@@ -1,7 +1,59 @@
 import { Priority } from "Empire/priority";
-import { Action, Creeps } from "./creeps";
-import { Empire, SourceData } from "Empire/empire";
+import { Empire } from "Empire/empire";
+import { SourceData } from "Empire/resources";
+import { Misc } from "./misc";
+import { Movement } from "./movement";
 
+export class HealData
+{
+    Healing: boolean = false;
+    HealerName: string = "";
+}
+
+export class Action extends Priority
+{
+    Name: string;
+    ShouldRun: (creep: Creep) => boolean;
+    ShouldBreak: boolean;
+    Run: (creep: Creep) => void;
+
+    constructor(name: string, priority: number, shouldRun: (creep: Creep) => boolean, shouldBreak: boolean = false, fn: (creep: Creep) => void)
+    {
+        super(priority);
+        this.Name = name;
+        this.ShouldRun = shouldRun;
+        this.ShouldBreak = shouldBreak;
+        this.Run = fn;
+    }
+
+    public static shouldRun(creep: Creep): boolean
+    {
+        return true;
+    }
+
+    public static Init()
+    {
+        Game.actions = {
+            renew: renew,
+            move: movement,
+            clearHealing: clearHealing,
+            haul: haulAction,
+            upgrade: upgradeAction,
+            pickupItems: pickupItemsAction,
+            harvest: harvestAction,
+            heal: healAction,
+            build: buildAction,
+            repair: repairAction,
+            attack: attackAction,
+            scout: scoutAction,
+        };
+    }
+
+    public static RegisterAction(action: Action)
+    {
+        Game.actions[action.Name] = action;
+    }
+}
 
 function clearHealingAction(creep: Creep)
 {
@@ -21,26 +73,26 @@ function shouldRenew(creep: Creep)
 {
     var closestSpawn = findClosestSpawn(creep);
     var regenedTicks = 600 / creep.body.length;
-    var regenCost = Creeps.Misc.calculateEnergyCost(Creeps.Misc.getBody(creep)) * 0.4 / creep.body.length;
-    return (creep.memory.renewing || (Creeps.Misc.getTicksToLive(creep) < 500 && closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > regenCost));
+    var regenCost = Misc.calculateEnergyCost(Misc.getBody(creep)) * 0.4 / creep.body.length;
+    return (creep.memory.renewing || (Misc.getTicksToLive(creep) < 500 && closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) > regenCost));
 }
 
 function movementAction(creep: Creep)
 {
-    Creeps.Movement.processMovement(creep);
+    Movement.processMovement(creep);
 }
 
-var movement = new Action("move", 1, Creeps.Movement.shouldMove, false, movementAction);
+var movement = new Action("move", 1, Movement.shouldMove, false, movementAction);
 
 var renew = new Action("renew", 11, shouldRenew, true, function (creep)
 {
     var closestSpawn = findClosestSpawn(creep);
     var regenedTicks = 600 / creep.body.length;
-    var regenCost = Creeps.Misc.calculateEnergyCost(Creeps.Misc.getBody(creep)) * 0.4 / creep.body.length;
+    var regenCost = Misc.calculateEnergyCost(Misc.getBody(creep)) * 0.4 / creep.body.length;
 
     creep.say("Renewing");
 
-    if (creep.memory.renewing && (Creeps.Misc.getTicksToLive(creep) > 1200 || closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) < regenCost))
+    if (creep.memory.renewing && (Misc.getTicksToLive(creep) > 1200 || closestSpawn.store.getUsedCapacity(RESOURCE_ENERGY) < regenCost))
     {
         creep.memory.renewing = false;
         return;
@@ -55,7 +107,7 @@ var renew = new Action("renew", 11, shouldRenew, true, function (creep)
         var renewResult = closestSpawn.renewCreep(creep);
         if (renewResult == ERR_NOT_IN_RANGE || renewResult == ERR_BUSY)
         {
-            Creeps.Movement.assignDest(creep, closestSpawn, 1);
+            Movement.assignDest(creep, closestSpawn, 1);
         }
     }
 });
@@ -77,7 +129,7 @@ function scout(creep: Creep)
         }
     });
 
-    if (fCreeps.length == 0) {
+    if (flength == 0) {
         creep.memory.scoutData.assignedRoom = creep.room.name;
     }
     else {
@@ -100,7 +152,7 @@ function harvest(creep: Creep)
         var sourcePos = new RoomPosition(roomSource.x, roomSource.y, creep.memory.sourceData.roomName);
         if (typeof Game.rooms[creep.memory.sourceData.roomName] == "undefined")
         {
-            Creeps.Movement.assignDest(creep, sourcePos, 1);
+            Movement.assignDest(creep, sourcePos, 1);
         }
         else
         {
@@ -118,7 +170,7 @@ function harvest(creep: Creep)
             var room = Game.rooms[source.roomName];
             if (typeof room == "undefined")
             {
-                Creeps.Movement.assignDest(creep, source, 1);
+                Movement.assignDest(creep, source, 1);
             }
             else
             {
@@ -135,7 +187,7 @@ function harvest(creep: Creep)
         var result = creep.harvest(idealSource);
         if (result == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, idealSource, 1);
+            Movement.assignDest(creep, idealSource, 1);
         }
     }
 }
@@ -155,7 +207,7 @@ function attack(creep: Creep)
 
     if (enemies.length > 0 && creep.attack(enemies[0]) == ERR_NOT_IN_RANGE)
     {
-        Creeps.Movement.assignDest(creep, enemies[0], 1);
+        Movement.assignDest(creep, enemies[0], 1);
     }
 }
 
@@ -182,7 +234,7 @@ function build(creep: Creep)
 
     if (target != null && creep.build(target) == ERR_NOT_IN_RANGE)
     {
-        Creeps.Movement.assignDest(creep, target, 3);
+        Movement.assignDest(creep, target, 3);
     }
 }
 
@@ -224,7 +276,7 @@ function repair(creep: Creep)
 
         if (creep.repair(target) == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, target, 3);
+            Movement.assignDest(creep, target, 3);
         }
     }
 }
@@ -240,7 +292,7 @@ function heal(creep: Creep)
         injuredAlly.memory.healData = { Healing: true, HealerName: creep.name };
         if (creep.heal(injuredAlly) == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, injuredAlly, 1);
+            Movement.assignDest(creep, injuredAlly, 1);
         }
         if (injuredAlly.hits == injuredAlly.hitsMax)
         {
@@ -269,7 +321,7 @@ function pickupItems(creep: Creep)
             withdrawing = true;
             if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE)
             {
-                Creeps.Movement.assignDest(creep, container, 1);
+                Movement.assignDest(creep, container, 1);
             }
         }
     }
@@ -285,7 +337,7 @@ function pickupItems(creep: Creep)
 
         if (returnVar == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, droppedItem, 1);
+            Movement.assignDest(creep, droppedItem, 1);
         }
     }
 };
@@ -297,7 +349,7 @@ function upgrade(creep: Creep)
     var target = creep.room.controller;
     if (creep.room.controller != undefined && creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE)
     {
-        Creeps.Movement.assignDest(creep, target as StructureController, 3);
+        Movement.assignDest(creep, target as StructureController, 3);
     }
 }
 
@@ -305,7 +357,7 @@ var upgradeAction = new Action("upgrade", 0, function (creep) { return global.sh
 
 function haul(creep: Creep)
 {
-    var targetStructures = Creeps.Misc.getFillableStructures(creep.room, (fillable) => { return !(fillable instanceof ConstructionSite) && fillable.structureType != STRUCTURE_CONTAINER; });
+    var targetStructures = Misc.getFillableStructures(creep.room, (fillable) => { return !(fillable instanceof ConstructionSite) && fillable.structureType != STRUCTURE_CONTAINER; });
 
     if (targetStructures.length > 0)
     {
@@ -313,42 +365,9 @@ function haul(creep: Creep)
 
         if (transporting && creep.transfer(targetStructures[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, targetStructures[0], 1);
+            Movement.assignDest(creep, targetStructures[0], 1);
         }
     }
 }
 
-var haulAction = new Action("haul", 0, function (creep) { return getDraining(creep) && Creeps.Misc.getFillableStructures(creep.room, (fillable) => { return !(fillable instanceof ConstructionSite) && fillable.structureType != STRUCTURE_CONTAINER; }).length > 0; }, true, haul);
-
-
-export class action
-{
-    public static Init()
-    {
-        Game.actions = {
-            renew: renew,
-            move: movement,
-            clearHealing: clearHealing,
-            haul: haulAction,
-            upgrade: upgradeAction,
-            pickupItems: pickupItemsAction,
-            harvest: harvestAction,
-            heal: healAction,
-            build: buildAction,
-            repair: repairAction,
-            attack: attackAction,
-            scout: scoutAction,
-        };
-    }
-
-    public static RegisterAction(action: Action)
-    {
-        Game.actions[action.Name] = action;
-    }
-}
-
-module.exports = {
-    Action: Action,
-
-
-};
+var haulAction = new Action("haul", 0, function (creep) { return getDraining(creep) && Misc.getFillableStructures(creep.room, (fillable) => { return !(fillable instanceof ConstructionSite) && fillable.structureType != STRUCTURE_CONTAINER; }).length > 0; }, true, haul);

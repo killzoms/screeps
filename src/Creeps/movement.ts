@@ -7,8 +7,57 @@
  * mod.thing == 'a thing'; // true
  */
 
-import { MoveDest, Dest, MovePath } from "Creeps/creeps";
-import { CachedRoom } from "Empire/empire";
+import { CachedRoom } from "Empire/rooms";
+
+export class MoveData
+{
+    Dest: MoveDest | undefined;
+    NewDest: boolean = false;
+    Moving: boolean = false;
+    Inc: number = 0;
+    movePath: MovePath = {
+        path: [],
+        incomplete: false
+    };
+}
+
+export class Dest
+{
+    x: number;
+    y: number;
+    roomName: string;
+
+    constructor(x: number, y: number, roomName: string)
+    {
+        this.x = x;
+        this.y = y;
+        this.roomName = roomName;
+    }
+}
+
+export class MoveDest
+{
+    Pos: Dest;
+    Range: number;
+
+    constructor(pos: Dest, range = 0)
+    {
+        this.Pos = pos;
+        this.Range = range;
+    }
+}
+
+export class MovePath
+{
+    path: PathStep[] | string;
+    incomplete: boolean;
+
+    constructor(path: PathStep[], incomplete: boolean)
+    {
+        this.path = path;
+        this.incomplete = incomplete;
+    }
+}
 
 function getDirection(dx: number, dy: number)
 {
@@ -69,22 +118,6 @@ function areDestsEqual(l: MoveDest | null, r: MoveDest | null)
         return l == r;
     }
     return l.Pos.x == r.Pos.x && l.Pos.y == r.Pos.y && l.Pos.roomName == r.Pos.roomName && l.Range == r.Range;
-}
-
-function assignDest(creep: Creep, pos: { x: number, y: number; roomName: string; } | { pos: { x: number, y: number; roomName: string; }; }, range = 0)
-{
-    var castPos = pos as { pos: { x: number, y: number; roomName: string; }; };
-    if (castPos.pos != undefined)
-    {
-        pos = castPos.pos;
-    }
-
-    var newDest = new MoveDest(pos as { x: number, y: number; roomName: string; }, range);
-    if (movement.notAtDest(creep, newDest) && !(creep.memory.moveData.Dest && areDestsEqual(creep.memory.moveData.Dest, newDest)))
-    {
-        creep.memory.moveData.NewDest = true;
-        creep.memory.moveData.Dest = newDest;
-    }
 }
 
 function mapToMovePath(pathFinderPath: RoomPosition[], orgPos: RoomPosition): PathStep[]
@@ -268,17 +301,30 @@ function findPath(curCreep: Creep, destPos: RoomPosition, opts: { range: number;
     return movePath;
 }
 
-export const movement =
+export class Movement
 {
-    /** @param {Creep} creep @param {RoomPosition} pos */
-    assignDest: assignDest,
-
-    shouldMove: function (creep: Creep)
+    static assignDest(creep: Creep, pos: { x: number, y: number; roomName: string; } | { pos: { x: number, y: number; roomName: string; }; }, range = 0)
     {
-        return creep.memory.renewing || (creep.memory.healData && creep.memory.healData.Healing) || (creep.memory.moveData.Moving || movement.notAtDest(creep));
-    },
+        var castPos = pos as { pos: { x: number, y: number; roomName: string; }; };
+        if (castPos.pos != undefined)
+        {
+            pos = castPos.pos;
+        }
 
-    notAtDest: function (creep: Creep, dest: MoveDest | undefined = undefined)
+        var newDest = new MoveDest(pos as { x: number, y: number; roomName: string; }, range);
+        if (Movement.notAtDest(creep, newDest) && !(creep.memory.moveData.Dest && areDestsEqual(creep.memory.moveData.Dest, newDest)))
+        {
+            creep.memory.moveData.NewDest = true;
+            creep.memory.moveData.Dest = newDest;
+        }
+    }
+
+    static shouldMove(creep: Creep)
+    {
+        return creep.memory.renewing || (creep.memory.healData && creep.memory.healData.Healing) || (creep.memory.moveData.Moving || Movement.notAtDest(creep));
+    }
+
+    static notAtDest(creep: Creep, dest: MoveDest | undefined = undefined)
     {
         if (dest == undefined)
         {
@@ -290,17 +336,17 @@ export const movement =
         }
 
         return !creep.pos.inRangeTo(dest.Pos.x, dest.Pos.y, dest.Range);
-    },
+    }
 
-    processMovement: function (creep: Creep)
+    static processMovement(creep: Creep)
     {
         var movePath = creep.memory.moveData.movePath;
         if (creep.memory.healData && creep.memory.healData.Healing)
         {
-            assignDest(creep, Game.creeps[creep.memory.healData.HealerName], 1);
+            Movement.assignDest(creep, Game.creeps[creep.memory.healData.HealerName], 1);
         }
 
-        if (creep.memory.moveData.NewDest || (!creep.memory.moveData.Moving && movement.notAtDest(creep)))
+        if (creep.memory.moveData.NewDest || (!creep.memory.moveData.Moving && Movement.notAtDest(creep)))
         {
             creep.memory.moveData.Inc = 0;
             creep.memory.moveData.Moving = true;
@@ -360,7 +406,7 @@ export const movement =
                 creep.move(nextStep.direction);
             }
 
-            if (movement.notAtDest(creep))
+            if (Movement.notAtDest(creep))
             {
                 creep.memory.moveData.movePath = movePath;
                 creep.memory.moveData.movePath.path = Room.serializePath(mPath);
@@ -372,4 +418,4 @@ export const movement =
             }
         }
     }
-};
+}

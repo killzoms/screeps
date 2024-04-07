@@ -1,8 +1,11 @@
 import { ErrorMapper } from "utils/ErrorMapper";
-import { Creeps, RoleData, Action, MoveDest, HealData, MoveData } from "Creeps/creeps";
+import { Creeps } from "Creeps/creeps";
+import { Action, HealData } from "Creeps/action";
+import { Role, RoleData } from "Creeps/roles";
 import { MemoryManager } from "memoryManager";
-import { Role } from "Creeps/roles";
-import { CachedRoom, SourceData } from "Empire/empire";
+import { SourceData } from "Empire/resources";
+import { CachedRoom } from "Empire/rooms";
+import { MoveData } from "Creeps/movement";
 
 declare global
 {

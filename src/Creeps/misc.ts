@@ -1,4 +1,4 @@
-import { Creeps } from "Creeps/creeps";
+import { Movement } from "./movement";
 
 export class Misc
 {
@@ -95,7 +95,7 @@ export class Misc
 
         if (creep.pickup(closestItems[0]) == ERR_NOT_IN_RANGE)
         {
-            Creeps.Movement.assignDest(creep, closestItems[0], 1);
+            Movement.assignDest(creep, closestItems[0], 1);
         }
     }
 
