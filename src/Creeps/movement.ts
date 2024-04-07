@@ -7,65 +7,59 @@
  * mod.thing == 'a thing'; // true
  */
 
-import { MoveDest } from "Creeps/creeps";
+import { MoveDest, Dest, MovePath } from "Creeps/creeps";
 import { CachedRoom } from "Empire/empire";
-
-function getMemDest(creep: Creep)
-{
-    if (creep.memory.dest)
-    {
-        var position = new RoomPosition(creep.memory.dest.Pos.x, creep.memory.dest.Pos.y, creep.memory.dest.Pos.roomName);
-        return new MoveDest(position, creep.memory.dest.Range);
-    }
-    return null;
-}
 
 function getDirection(dx: number, dy: number)
 {
-
-    var adx = Math.abs(dx), ady = Math.abs(dy);
-
-    if (adx > ady * 2)
+    var direction: DirectionConstant;
+    if (dx == 1)
     {
-        if (dx > 0)
+        if (dy == 1)
         {
-            return RIGHT;
+            direction = BOTTOM_RIGHT;
+        }
+        else if (dy == -1)
+        {
+            direction = TOP_RIGHT;
         }
         else
         {
-            return LEFT;
+            direction = RIGHT;
         }
     }
-    else if (ady > adx * 2)
+    else if (dx == -1)
     {
-        if (dy > 0)
+        if (dy == 1)
         {
-            return BOTTOM;
+            direction = BOTTOM_LEFT;
+        }
+        else if (dy == -1)
+        {
+            direction = TOP_LEFT;
         }
         else
         {
-            return TOP;
+            direction = LEFT;
         }
     }
     else
     {
-        if (dx > 0 && dy > 0)
+        if (dy == 1)
         {
-            return BOTTOM_RIGHT;
+            direction = BOTTOM;
         }
-        if (dx > 0 && dy < 0)
+        else if (dy == -1)
         {
-            return TOP_RIGHT;
+            direction = TOP;
         }
-        if (dx < 0 && dy > 0)
+        else
         {
-            return BOTTOM_LEFT;
-        }
-        if (dx < 0 && dy < 0)
-        {
-            return TOP_LEFT;
+            direction = 0 as DirectionConstant;
         }
     }
+
+    return direction;
 }
 
 function areDestsEqual(l: MoveDest | null, r: MoveDest | null)
@@ -86,14 +80,14 @@ function assignDest(creep: Creep, pos: { x: number, y: number; roomName: string;
     }
 
     var newDest = new MoveDest(pos as { x: number, y: number; roomName: string; }, range);
-    if (movement.notAtDest(creep, newDest) && !(creep.memory.dest && areDestsEqual(getMemDest(creep), newDest)))
+    if (movement.notAtDest(creep, newDest) && !(creep.memory.moveData.Dest && areDestsEqual(creep.memory.moveData.Dest, newDest)))
     {
-        creep.memory.newDest = true;
-        creep.memory.dest = newDest;
+        creep.memory.moveData.NewDest = true;
+        creep.memory.moveData.Dest = newDest;
     }
 }
 
-function mapToMovePath(pathFinderPath: RoomPosition[], orgPos: RoomPosition)
+function mapToMovePath(pathFinderPath: RoomPosition[], orgPos: RoomPosition): PathStep[]
 {
     var curX = orgPos.x, curY = orgPos.y;
     let path = [];
@@ -105,10 +99,49 @@ function mapToMovePath(pathFinderPath: RoomPosition[], orgPos: RoomPosition)
         {
             break;
         }
-        var result = new RoomPosition(pos.x, pos.y, pos.roomName);
 
-        curX = result.x;
-        curY = result.y;
+        var x = pos.x;
+        var y = pos.y;
+        var dx: number;
+        var dy: number;
+        var direction: number;
+
+        if (x > curX)
+        {
+            dx = 1;
+        }
+        else if (x < curX)
+        {
+            dx = -1;
+        }
+        else
+        {
+            dx = 0;
+        }
+
+        if (y > curY)
+        {
+            dy = 1;
+        }
+        else if (y < curY)
+        {
+            dy = -1;
+        }
+        else
+        {
+            dy = 0;
+        }
+
+        var result = {
+            x: x,
+            dx: dx,
+            y: y,
+            dy: dy,
+            direction: getDirection(dx, dy)
+        };
+
+        curX = x;
+        curY = y;
         path.push(result);
     }
 
@@ -230,9 +263,9 @@ function findPath(curCreep: Creep, destPos: RoomPosition, opts: { range: number;
         }
     });
 
-    pathFinderPath.path = mapToMovePath(pathFinderPath.path, orgPos);
+    var movePath = new MovePath(mapToMovePath(pathFinderPath.path, orgPos), pathFinderPath.incomplete);
 
-    return pathFinderPath;
+    return movePath;
 }
 
 export const movement =
@@ -242,15 +275,15 @@ export const movement =
 
     shouldMove: function (creep: Creep)
     {
-        return creep.memory.renewing || (creep.memory.healData && creep.memory.healData.Healing) || (creep.memory.moving || movement.notAtDest(creep));
+        return creep.memory.renewing || (creep.memory.healData && creep.memory.healData.Healing) || (creep.memory.moveData.Moving || movement.notAtDest(creep));
     },
 
-    notAtDest: function (creep: Creep, dest: MoveDest | null = null)
+    notAtDest: function (creep: Creep, dest: MoveDest | undefined = undefined)
     {
-        if (dest == null)
+        if (dest == undefined)
         {
-            dest = getMemDest(creep);
-            if (dest == null)
+            dest = creep.memory.moveData.Dest;
+            if (dest == undefined)
             {
                 return false;
             }
@@ -261,41 +294,50 @@ export const movement =
 
     processMovement: function (creep: Creep)
     {
-        var movePath = creep.memory.movePath;
-        if (creep.memory.healData && creep.memory.healData.healing)
+        var movePath = creep.memory.moveData.movePath;
+        if (creep.memory.healData && creep.memory.healData.Healing)
         {
-            assignDest(creep, Game.creeps[creep.memory.healData.healerName], 1);
+            assignDest(creep, Game.creeps[creep.memory.healData.HealerName], 1);
         }
 
-        if (creep.memory.newDest || (!creep.memory.moving && movement.notAtDest(creep)))
+        if (creep.memory.moveData.NewDest || (!creep.memory.moveData.Moving && movement.notAtDest(creep)))
         {
-            creep.memory.moveInc = 0;
-            creep.memory.moving = true;
-            var memDest = getMemDest(creep);
-            movePath = findPath(creep, memDest.pos, { range: memDest.range });
+            creep.memory.moveData.Inc = 0;
+            creep.memory.moveData.Moving = true;
+            var memDest = creep.memory.moveData.Dest;
+            if (memDest != null)
+            {
+                movePath = findPath(creep, memDest.Pos as RoomPosition, { range: memDest.Range });
+            }
         }
         else
         {
-            if (typeof movePath == "undefined" || typeof movePath.path == "undefined" || creep.memory.moveInc >= 5)
+            if (movePath == undefined || typeof movePath.path == "undefined" || creep.memory.moveData.Inc >= 5)
             {
                 var oldPath = movePath;
-                var memDest = getMemDest(creep);
-                movePath = findPath(creep, memDest.pos, { range: memDest.range });
-                if (movePath.incomplete)
+                var memDest = creep.memory.moveData.Dest;
+                if (memDest != null)
                 {
-                    movePath = oldPath;
+                    movePath = findPath(creep, memDest.Pos as RoomPosition, { range: memDest.Range });
+                    if (movePath.incomplete)
+                    {
+                        movePath = oldPath;
+                    }
                 }
-                creep.memory.moveInc = 0;
+                creep.memory.moveData.Inc = 0;
             }
         }
 
-        creep.memory.moveInc += 1;
+        creep.memory.moveData.Inc += 1;
 
         if (typeof movePath == "undefined" || typeof movePath.path == "undefined" || movePath.path.length == 0)
         {
-            var memDest = getMemDest(creep);
-            movePath = findPath(creep, memDest.pos, { range: memDest.range });
-            creep.memory.moveInc = 0;
+            var memDest = creep.memory.moveData.Dest;
+            if (memDest != null)
+            {
+                movePath = findPath(creep, memDest.Pos as RoomPosition, { range: memDest.Range });
+            }
+            creep.memory.moveData.Inc = 0;
         }
 
         if (typeof movePath != "undefined" && typeof movePath.path == "string")
@@ -303,52 +345,31 @@ export const movement =
             movePath.path = Room.deserializePath(movePath.path);
         }
 
-        if (creep.fatigue <= 0 && movePath.path && movePath.path[0])
+        var mPath = movePath.path as PathStep[];
+        if (mPath != undefined)
         {
-            var creepsAtNewPos = creep.room.lookForAt(LOOK_CREEPS, movePath.path[0].x, movePath.path[0].y);
-
-            if (creepsAtNewPos[0] && creepsAtNewPos[0].my && creepsAtNewPos[0].name != creep.name && creepsAtNewPos[0].memory.roleData.priority > creep.memory.roleData.priority)
+            if (creep.fatigue <= 0 && mPath[0])
             {
-                var blockingCreep = creepsAtNewPos[0];
-                if (typeof blockingCreep.memory.movement == "undefined")
+                var nextStep = mPath[0];
+                if (creep.pos.x == nextStep.x && creep.pos.y == nextStep.y && mPath.length > 1)
                 {
-                    blockingCreep.memory.movement = { amBlocking: false, blocking: "" };
+                    mPath.shift();
+                    nextStep = mPath[0];
                 }
-                blockingCreep.memory.movement.amBlocking = true;
-                blockingCreep.memory.movement.blocking = creep.name;
 
-                blockingCreep.move(blockingCreep.pos.getDirectionTo(creep.pos));
+                creep.move(nextStep.direction);
             }
 
-            if (typeof creep.memory.movement != "undefined" && creep.memory.movement.amBlocking == true)
+            if (movement.notAtDest(creep))
             {
-                creep.memory.movement.amBlocking = false;
+                creep.memory.moveData.movePath = movePath;
+                creep.memory.moveData.movePath.path = Room.serializePath(mPath);
+                creep.memory.moveData.NewDest = false;
             }
             else
             {
-                creep.move(movePath.path[0].direction);
-                console.log("Creep: " + creep.name + ": " + movePath.path[0].direction);
-                if (creep.pos.x == movePath.path[0].x && creep.pos.y == movePath.path[0].y)
-                {
-                    movePath.path.shift();
-                    creep.memory.movePath.curPos = { x: creep.pos.x, y: creep.pos.y, roomName: creep.pos.roomName };
-                }
+                creep.memory.moveData.Moving = false;
             }
-        }
-
-        if (movement.notAtDest(creep))
-        {
-            creep.memory.movePath = movePath;
-            if (typeof movePath.path != typeof [])
-            {
-                console.log(movePath.path);
-            }
-            creep.memory.movePath.path = Room.serializePath(movePath.path);
-            creep.memory.newDest = false;
-        }
-        else
-        {
-            creep.memory.moving = false;
         }
     }
 };

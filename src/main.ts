@@ -1,5 +1,5 @@
 import { ErrorMapper } from "utils/ErrorMapper";
-import { Creeps, RoleData, Action, MoveDest, HealData } from "Creeps/creeps";
+import { Creeps, RoleData, Action, MoveDest, HealData, MoveData } from "Creeps/creeps";
 import { MemoryManager } from "memoryManager";
 import { Role } from "Creeps/roles";
 import { CachedRoom, SourceData } from "Empire/empire";
@@ -31,10 +31,9 @@ declare global
     roleData: RoleData;
     healData: HealData;
     disable: boolean;
-    dest: MoveDest | null;
-    newDest: boolean;
     version: number;
     lastAction: string;
+    moveData: MoveData;
   }
 
   interface Game

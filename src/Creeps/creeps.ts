@@ -57,16 +57,29 @@ export class CreepPos
 
 export class MoveDest
 {
-    Pos: { x: number, y: number, roomName: string; };
+    Pos: Dest;
     Range: number;
 
-    constructor(pos: { x: number, y: number; roomName: string; }, range = 0)
+    constructor(pos: Dest, range = 0)
     {
         this.Pos = pos;
         this.Range = range;
     }
 }
 
+export class Dest
+{
+    x: number;
+    y: number;
+    roomName: string;
+
+    constructor(x: number, y: number, roomName: string)
+    {
+        this.x = x;
+        this.y = y;
+        this.roomName = roomName;
+    }
+}
 
 export class Action extends Priority
 {
@@ -94,4 +107,28 @@ export class HealData
 {
     Healing: boolean = false;
     HealerName: string = "";
+}
+
+export class MoveData
+{
+    Dest: MoveDest | undefined;
+    NewDest: boolean = false;
+    Moving: boolean = false;
+    Inc: number = 0;
+    movePath: MovePath = {
+        path: [],
+        incomplete: false
+    };
+}
+
+export class MovePath
+{
+    path: PathStep[] | string;
+    incomplete: boolean;
+
+    constructor(path: PathStep[], incomplete: boolean)
+    {
+        this.path = path;
+        this.incomplete = incomplete;
+    }
 }

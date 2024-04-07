@@ -1,4 +1,4 @@
-import { MoveDest, RoleData, Action, HealData } from "Creeps/creeps";
+import { MoveDest, RoleData, Action, HealData, MoveData } from "Creeps/creeps";
 import { SourceData } from "Empire/empire";
 
 export class MemoryStructure implements CreepMemory
@@ -7,11 +7,10 @@ export class MemoryStructure implements CreepMemory
     roleData: RoleData;
     healData: HealData = new HealData();
     disable: boolean = false;
-    dest: MoveDest | null = null;
-    newDest: boolean = false;
     lastAction: string = "none";
     renewing: boolean = false;
     sourceData: SourceData | null = null;
+    moveData: MoveData = new MoveData();
 
     constructor(roleData: RoleData)
     {
