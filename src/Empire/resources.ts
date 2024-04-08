@@ -86,7 +86,7 @@ export class SourceController
         let availableSources = [];
         if (SourceController.Sources)
         {
-            SourceController.Sources = SourceController.findSources();
+            SourceController.Sources = SourceController.findAllSources();
         }
 
         for (var i in SourceController.Sources)
@@ -109,7 +109,7 @@ export class SourceController
         return availableSources;
     }
 
-    public static findSources(): Record<string, EmpireSource[]>
+    public static findAllSources(): Record<string, EmpireSource[]>
     {
         let foundSources: Record<string, EmpireSource[]> = {};
         if (!Memory.cachedRooms)
@@ -139,8 +139,6 @@ export class SourceController
 
                 fSources.push(new EmpireSource(source.pos, j, positionData));
             }
-
-            Memory.cachedRooms[i] = new CachedRoom(i, Game.time, fSources);
         }
 
         for (let i in Memory.cachedRooms)
@@ -162,6 +160,34 @@ export class SourceController
         return foundSources;
     }
 
+    public static findSourcesInRoom(roomName: string): EmpireSource[]
+    {
+        var room = Game.rooms[roomName];
+        if (room)
+        {
+            var cachedRoom = Memory.cachedRooms[roomName];
+            if (cachedRoom && cachedRoom.tickCached == Game.time)
+            {
+                return cachedRoom.sourceData;
+            }
+
+            let fSources: EmpireSource[] = [];
+            let found = room.find(FIND_SOURCES);
+
+            for (let j = 0; j < found.length; j++)
+            {
+                var source = found[j];
+                var positionData = findOpenPositions(source.pos, j);
+
+
+                fSources.push(new EmpireSource(source.pos, j, positionData));
+            }
+
+            return fSources;
+        }
+        return [];
+    }
+
     public static assignSource(creep: Creep, source: SourceData)
     {
         if (Memory.cachedRooms[source.roomName] && Memory.cachedRooms[source.roomName].sourceData[source.Index])
@@ -178,9 +204,9 @@ export class SourceController
     public static getAvailableEnergy()
     {
         var availableEnergy = 0;
-        if (Object.keys(SourceController.Sources).length == 0)
+        if (SourceController.Sources == undefined)
         {
-            SourceController.Sources = SourceController.findSources();
+            SourceController.Sources = SourceController.findAllSources();
         }
 
         for (var i in SourceController.Sources)

@@ -6,6 +6,7 @@ import { MemoryManager } from "memoryManager";
 import { SourceData } from "Empire/resources";
 import { CachedRoom } from "Empire/rooms";
 import { MoveData } from "Creeps/movement";
+import { Empire } from "Empire/empire";
 
 declare global
 {
@@ -60,8 +61,7 @@ declare global
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() =>
 {
-  console.log(`Current game tick is ${Game.time}`);
-
+  console.log("Hello World!");
   //profiler.wrap(function() {
   var spawn = Game.spawns["Spawn1"];
   if (spawn && spawn.room.controller != null)
@@ -74,9 +74,12 @@ export const loop = ErrorMapper.wrapLoop(() =>
     }
     else if (spawn.room.controller.ticksToDowngrade > controllerDowngrade - 500)
     {
-      global.shouldUpgrade = false;
+      global.shouldUpgrade = spawn.room.controller.level < 5;;
     }
+
   }
+
+  Empire.Structures.ProcessStructures();
 
   if (Memory.oldData != null)
   {
@@ -108,7 +111,7 @@ export const loop = ErrorMapper.wrapLoop(() =>
     }
     catch (ex: any)
     {
-      console.log("ERRORED ON " + creep.name + "\n" + ex.stack);
+      console.error("ERRORED ON " + creep.name + "\n" + ex.stack);
       Game.notify("ERRORED ON " + creep.name + "\n" + ex.stack);
     }
   }

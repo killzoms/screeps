@@ -1,6 +1,7 @@
 import { Action } from "./action";
 import { Priority } from "Empire/priority";
 import { Misc } from "./misc";
+import { Empire } from "Empire/empire";
 
 export class BodyPart
 {
@@ -27,12 +28,18 @@ export class RoleData extends Priority
 }
 
 
-class RoleAction
+class RoleAction extends Action
 {
     Action: Action;
 
-    constructor(action: Action, priority: number, shouldRun: (creep: Creep) => boolean = Action.shouldRun)
+    constructor(action: Action, priority: number, shouldRun: ((creep: Creep) => boolean) | undefined = undefined)
     {
+        var aShouldRun = shouldRun;
+        if (aShouldRun == undefined)
+        {
+            aShouldRun = action.ShouldRun;
+        }
+        super(action.Name, priority, aShouldRun, action.ShouldBreak, action.Run);
         this.Action = action;
     }
 }
@@ -83,6 +90,7 @@ export class Roles
                 Limit: function ()
                 {
                     var limit = 0;
+                    Empire.SourceController.getAvailableSources();
                     if (Memory.cachedRooms)
                     {
                         for (var roomIndex in Memory.cachedRooms)
@@ -114,7 +122,7 @@ export class Roles
             healer: {
                 BodyParts: [{ PartName: HEAL, Multiplier: 1 }, { PartName: MOVE, Multiplier: 1 }],
                 Actions: [new RoleAction(Game.actions.heal, 10), new RoleAction(Game.actions.upgrade, 8), new RoleAction(Game.actions.repair, 7), new RoleAction(Game.actions.pickupItems, 3), new RoleAction(Game.actions.harvest, 3), /*new Action(buildAction, 9), new Action(upgradeAction, 8), new Action(harvestAction, 1)*/],
-                Limit: function () { return 0; },
+                Limit: function () { return 1; },
                 Priority: 11
             },
             upgrader: {
@@ -126,7 +134,7 @@ export class Roles
             attacker: {
                 BodyParts: [{ PartName: TOUGH, Multiplier: 2 }, { PartName: ATTACK, Multiplier: 1 }, { PartName: MOVE, Multiplier: 3 }],
                 Actions: [new RoleAction(Game.actions.attack, 10), new RoleAction(Game.actions.upgrade, 7), new RoleAction(Game.actions.repair, 8), new RoleAction(Game.actions.haul, 6), new RoleAction(Game.actions.pickupItems, 2), new RoleAction(Game.actions.harvest, 1), /*new Action(buildAction, 9), new Action(upgradeAction, 8), new Action(harvestAction, 1)*/],
-                Limit: function () { return 0; },
+                Limit: function () { return 2; },
                 Priority: 10
             },
 
@@ -160,16 +168,16 @@ export class Roles
         var roleData = global.roles[creep.memory.roleData.Role];
         if (roleData)
         {
-            var sortedActions = _.sortBy(roleData.Actions, (action) => { return -action.Action.Priority; });
+            var sortedActions = _.sortBy(roleData.Actions, (action) => { return -action.Priority; });
             for (var i in sortedActions)
             {
                 var pickedAction = sortedActions[i];
 
-                if (pickedAction.Action.ShouldRun(creep))
+                if (pickedAction.ShouldRun(creep))
                 {
-                    pickedAction.Action.Run(creep);
-                    creep.memory.lastAction = pickedAction.Action.Name;
-                    if (pickedAction.Action.ShouldBreak)
+                    pickedAction.Run(creep);
+                    creep.memory.lastAction = pickedAction.Name;
+                    if (pickedAction.ShouldBreak)
                     {
                         break;
                     }

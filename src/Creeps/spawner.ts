@@ -14,12 +14,12 @@ import { Misc } from "./misc";
 function buildBody(bodyPartsData: BodyPart[], spawn: StructureSpawn): BodyPartConstant[]
 {
     let multiplier = 0;
-    let bodyParts: BodyPartConstant[] = [];
+    var bodyParts: BodyPartConstant[] = [];
 
     for (var bodyPart of Roles.Base.BodyParts)
     {
         var addedParts = 0;
-        while (bodyPart.Multiplier < addedParts)
+        while (bodyPart.Multiplier > addedParts)
         {
             bodyParts.push(bodyPart.PartName);
             addedParts++;

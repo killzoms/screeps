@@ -59,6 +59,7 @@ export class Misc
                 creepsByRole.push(creep);
             }
         }
+
         return creepsByRole;
     }
 

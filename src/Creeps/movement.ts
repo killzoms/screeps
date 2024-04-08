@@ -7,6 +7,7 @@
  * mod.thing == 'a thing'; // true
  */
 
+import { SourceController } from "Empire/resources";
 import { CachedRoom } from "Empire/rooms";
 
 export class MoveData
@@ -199,7 +200,7 @@ function findPath(curCreep: Creep, destPos: RoomPosition, opts: { range: number;
             // In this example `room` will always exist, but since
             // PathFinder supports searches which span multiple rooms
             // you should be careful!
-            let costs = new PathFinder.CostMatrix;
+            var costs = new PathFinder.CostMatrix;
             if (!Memory.cachedRooms)
             {
                 Memory.cachedRooms = {};
@@ -248,10 +249,7 @@ function findPath(curCreep: Creep, destPos: RoomPosition, opts: { range: number;
             // Avoid creeps in the room
             room.find(FIND_CREEPS).forEach(function (creep)
             {
-                if (creep.pos.x > destPos.x + opts.range && creep.pos.x < destPos.x - opts.range && creep.pos.y > destPos.y + opts.range && creep.pos.y < destPos.y - opts.range)
-                {
-                    costs.set(creep.pos.x, creep.pos.y, 0xff);
-                }
+                costs.set(creep.pos.x, creep.pos.y, 0xff);
 
                 if (!creep.my)
                 {
@@ -265,9 +263,10 @@ function findPath(curCreep: Creep, destPos: RoomPosition, opts: { range: number;
 
             if (cachedRoom == undefined)
             {
-                cachedRoom = new CachedRoom(room.name, Game.time, []);
+                cachedRoom = new CachedRoom(room.name, Game.time, SourceController.findSourcesInRoom(room.name));
             }
 
+            cachedRoom.sourceData = SourceController.findSourcesInRoom(room.name);
             cachedRoom.CostMatrix = costs.serialize();
             cachedRoom.tickCached = Game.time;
             cachedRoom.ExitCount = 0;

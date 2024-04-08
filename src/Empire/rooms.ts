@@ -1,4 +1,5 @@
 import { EmpireSource } from "./resources";
+
 export class CachedRoom
 {
     public roomName: string;

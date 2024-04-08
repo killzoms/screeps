@@ -142,17 +142,16 @@ var scoutAction = new Action("scout", 0, function (creep) { return false;/* retu
 function harvest(creep: Creep)
 {
     var idealSource: Source | undefined;
-    if (creep.memory.sourceData && creep.memory.sourceData.roomName && creep.memory.sourceData.Index)
+    if (creep.memory.sourceData != undefined && creep.memory.sourceData.roomName != undefined && creep.memory.sourceData.Index != undefined)
     {
         if (Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData == null)
         {
-            Empire.SourceController.findSources();
+            Empire.SourceController.findAllSources();
         }
         var roomSource = Memory.cachedRooms[creep.memory.sourceData.roomName].sourceData[creep.memory.sourceData.Index];
-        var sourcePos = new RoomPosition(roomSource.x, roomSource.y, creep.memory.sourceData.roomName);
         if (typeof Game.rooms[creep.memory.sourceData.roomName] == "undefined")
         {
-            Movement.assignDest(creep, sourcePos, 1);
+            Movement.assignDest(creep, creep.memory.sourceData, 1);
         }
         else
         {
@@ -181,10 +180,10 @@ function harvest(creep: Creep)
         }
     }
 
-
     if (idealSource != undefined)
     {
         var result = creep.harvest(idealSource);
+
         if (result == ERR_NOT_IN_RANGE)
         {
             Movement.assignDest(creep, idealSource, 1);
