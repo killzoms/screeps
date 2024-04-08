@@ -30,18 +30,10 @@ jobs:
           npm install
           npm run-script build
       
-      - name: screeps-pusher action
-        # You may pin to the exact commit or the version.
-        # uses: kskitek/screeps-pusher@2c16dbf4d2128b16ef7abb597d463a3518712ebe
-        uses: kskitek/screeps-pusher@v0.1
-        with:
-          # Destination branch in screeps.
-          branch: main
-          # Screeps API token. Can be obtained from account settings: https://screeps.com/a/#!/account/auth-tokens
-          token: ${{secrets.SCREEPS_TOKEN}}
-          # Directory for .js files.
-          dir: dist/ # optional, default is ./
-          # Screeps server API URL
-          apiURL: https://screeps.com/api/user/code # optional, default is https://screeps.com/api/user/code
-          # HTTP Client timeout
-          timeout: 10s # optional, default is 10s
+
+      - name: Create screeps.json
+        env: 
+          screepsJson: ${{secrets.SCREEPS_JSON}}
+        run: |
+          echo "$screepsJson" > screeps.json
+          npm run-script push-main
